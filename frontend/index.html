@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Waste Management Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <h1>Smart Waste Management Dashboard</h1>
+    <p class="sub">Fog &amp; Edge Architecture &middot; Real-time Streaming</p>
+
+    <div id="status-bar">
+        <span id="last-update">Waiting for data…</span>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts">
+        <div class="chart-box">
+            <h3>Fill Level (%)</h3>
+            <canvas id="fillChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Temperature (°C)</h3>
+            <canvas id="tempChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Methane Level (ppm)</h3>
+            <canvas id="methaneChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Bin ID</th>
+                <th>Fill Level</th>
+                <th>Status</th>
+                <th>Temperature</th>
+                <th>Methane</th>
+                <th>Weight</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody id="bin-data">
+            <tr>
+                <td colspan="7">Loading…</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <footer>Smart Waste Management System — MSc Fog &amp; Edge Computing</footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
