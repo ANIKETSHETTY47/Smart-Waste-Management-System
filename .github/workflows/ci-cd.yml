@@ -1,0 +1,129 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ── Stage 1: Lint & Static Analysis ──────────────────────────
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linting tools
+        run: pip install flake8 bandit
+
+      - name: Run flake8 (style & syntax checks)
+        run: |
+          flake8 sensor/ fog/ cloud/ bonus/ config.py \
+            --max-line-length 120 \
+            --count --show-source --statistics
+
+      - name: Run bandit (security scan)
+        run: |
+          bandit -r sensor/ fog/ cloud/ bonus/ config.py \
+            -s B101 --severity-level medium -f txt
+
+  # ── Stage 2: Test ────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install boto3 requests pytest moto
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+
+  # ── Stage 3: Build ──────────────────────────────────────────
+  build:
+    name: Package Lambda Functions
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package processWasteSensorData
+        run: |
+          cd cloud/lambda/process_waste_sensor
+          zip -j process_waste_sensor.zip lambda_function.py
+          echo "Built process_waste_sensor.zip ($(stat --printf='%s' process_waste_sensor.zip) bytes)"
+
+      - name: Package getWasteData
+        run: |
+          cd cloud/lambda/get_waste_data
+          zip -j get_waste_data.zip lambda_function.py
+          echo "Built get_waste_data.zip ($(stat --printf='%s' get_waste_data.zip) bytes)"
+
+      - name: Upload Lambda artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-packages
+          path: |
+            cloud/lambda/process_waste_sensor/process_waste_sensor.zip
+            cloud/lambda/get_waste_data/get_waste_data.zip
+          retention-days: 7
+
+  # ── Stage 4: Deploy (manual trigger only) ───────────────────
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Lambda packages
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-packages
+          path: cloud/lambda/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Update Lambda function code
+        run: |
+          echo "Updating processWasteSensorData..."
+          aws lambda update-function-code \
+            --function-name processWasteSensorData \
+            --zip-file fileb://cloud/lambda/process_waste_sensor/process_waste_sensor.zip
+
+          echo "Updating getWasteData..."
+          aws lambda update-function-code \
+            --function-name getWasteData \
+            --zip-file fileb://cloud/lambda/get_waste_data/get_waste_data.zip
+
+      - name: Sync dashboard to S3
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          aws s3 sync frontend/ s3://waste-dashboard-${ACCOUNT_ID}/
+          echo "Dashboard deployed to http://waste-dashboard-${ACCOUNT_ID}.s3-website-us-east-1.amazonaws.com"
