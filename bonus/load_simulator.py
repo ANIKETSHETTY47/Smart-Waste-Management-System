@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 # Allow imports from project root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from config import (
+from config import (  # noqa: E402
     NUM_BINS,
     BIN_ID_PREFIX,
     FILL_LEVEL_RANGE,
@@ -21,7 +21,7 @@ from config import (
     METHANE_RANGE,
     WEIGHT_RANGE,
 )
-from fog.fog_node import process_sensor_data
+from fog.fog_node import process_sensor_data  # noqa: E402
 
 
 # ─── Configuration ───────────────────────────────────────────────────

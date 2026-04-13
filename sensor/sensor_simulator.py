@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 # Allow imports from project root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from config import (
+from config import (  # noqa: E402
     NUM_BINS,
     BIN_ID_PREFIX,
     DISPATCH_INTERVAL_SECONDS,
@@ -22,7 +22,7 @@ from config import (
     METHANE_RANGE,
     WEIGHT_RANGE,
 )
-from fog.fog_node import process_sensor_data
+from fog.fog_node import process_sensor_data  # noqa: E402
 
 
 def generate_sensor_reading(bin_id: str) -> dict:

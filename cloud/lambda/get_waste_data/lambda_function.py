@@ -8,7 +8,6 @@ reading per bin as a JSON array.
 import json
 import os
 from decimal import Decimal
-from collections import defaultdict
 
 import boto3
 

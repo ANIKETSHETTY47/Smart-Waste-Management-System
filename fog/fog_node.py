@@ -13,7 +13,7 @@ import boto3
 # Allow imports from project root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from config import (
+from config import (  # noqa: E402
     AWS_REGION,
     SQS_QUEUE_NAME,
     FILL_THRESHOLD,
@@ -95,6 +95,6 @@ def process_sensor_data(data: dict) -> None:
             QueueUrl=queue_url,
             MessageBody=json.dumps(data),
         )
-        print(f"[Fog]  ✓ Sent to SQS")
+        print("[Fog]  ✓ Sent to SQS")
     except Exception as exc:
         print(f"[Fog]  ✗ SQS send failed: {exc}")
